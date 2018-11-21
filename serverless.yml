@@ -1,0 +1,70 @@
+# Welcome to Serverless!
+# noServerNovember Challenge #9 - Crypto ETL and SMS Prices on demand
+
+service: crypto 
+
+custom: 
+  # Our stage is based on what is passed in when running serverless
+  # commands.  Or fallback to what we set in the provider section.
+  stage: ${opt:stage, self:provider.stage}
+  # Set our DynamoDB throughput based on stage
+  tableThroughputs:
+    prod: 1
+    default: 1
+  tableThroughput: ${self:custom.tableThroughputs.${self:custom.stage}, self:custom.tableThroughputs.default}
+  tableName: ${self:custom.stage}-smscrypto
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: dev
+  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+    - Effect: Allow
+      Action: 
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "Fn::GetAtt": [ SMSCryptoTable, Arn ]
+
+# you can define service wide environment variables here
+  environment:
+    tableName: ${self:custom.tableName}
+    region: ${self:provider.region}
+
+functions:
+  etlcrypto:
+    handler: handler.etlcrypto
+    events:
+      - schedule: rate(1 hour)
+  smscrypto:
+    handler: handler.smscrypto
+    events:
+      - http:
+          path: smscrypto
+          method: post
+          integration: lambda
+          cors: true
+          response: 
+            headers:
+              Content-Type: "'application/xml'"
+            template: $input.path("$")
+            statusCodes:
+              200:
+                pattern: ''
+                template:
+                  application/json: $input.path("$")
+                headers:
+                  Content-Type: "'application/xml'"
+
+# you can add CloudFormation resource templates here
+resources:
+  # DynamoDB
+  - ${file(resources/dynamodb-table.yml)}

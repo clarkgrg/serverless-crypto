@@ -1,0 +1,19 @@
+{
+  "name": "crypto",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.360.0",
+    "axios": "^0.18.0",
+    "coinbase": "^2.0.8",
+    "moment": "^2.22.2",
+    "twilio": "^3.24.0"
+  }
+}
